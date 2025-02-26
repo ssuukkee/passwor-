@@ -1,57 +1,45 @@
-from flask import Flask, render_template, request
-import random
-import string
-
-app = Flask(__name__)
-
-def generate_password(length=12, use_digits=True, use_special_chars=True):
-    letters = string.ascii_letters  # a-z, A-Z
-    digits = string.digits if use_digits else ''  # 0-9
-    special_chars = string.punctuation if use_special_chars else ''  # !@#$...
-    
-    all_chars = letters + digits + special_chars
-    if not all_chars:
-        raise ValueError("At least one character set must be selected.")
-    
-    password = ''.join(random.choice(all_chars) for _ in range(length))
-    return password
-
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    password = ""
-    if request.method == 'POST':
-        length = request.form.get("length", 12)
-        try:
-            length = int(length)
-        except ValueError:
-            length = 12
-        use_digits = "digits" in request.form
-        use_special_chars = "special_chars" in request.form
-        password = generate_password(length, use_digits, use_special_chars)
-    
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Password Generator</title>
-    </head>
-    <body>
-        <h1>Generate a Secure Password</h1>
-        <form method="post">
-            <label for="length">Password Length:</label>
-            <input type="number" name="length" value="12" min="4" max="64">
-            <br>
-            <input type="checkbox" name="digits" checked> Include Numbers
-            <br>
-            <input type="checkbox" name="special_chars" checked> Include Special Characters
-            <br>
-            <button type="submit">Generate</button>
-        </form>
-        <h2>Generated Password: {}</h2>
-    </body>
-    </html>
-    '''.format(password)
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Password Generator</title>
+    <script>
+        function generatePassword() {
+            let length = document.getElementById("length").value;
+            let useDigits = document.getElementById("digits").checked;
+            let useSpecialChars = document.getElementById("special_chars").checked;
+            
+            const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const digits = "0123456789";
+            const specialChars = "!@#$%^&*()_+[]{}|;:,.<>?";
+            
+            let allChars = letters;
+            if (useDigits) allChars += digits;
+            if (useSpecialChars) allChars += specialChars;
+            
+            if (allChars.length === 0) {
+                alert("Please select at least one character set.");
+                return;
+            }
+            
+            let password = "";
+            for (let i = 0; i < length; i++) {
+                password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+            }
+            
+            document.getElementById("passwordOutput").innerText = "Generated Password: " + password;
+        }
+    </script>
+</head>
+<body>
+    <h1>Generate a Secure Password</h1>
+    <label for="length">Password Length:</label>
+    <input type="number" id="length" value="12" min="4" max="64">
+    <br>
+    <input type="checkbox" id="digits" checked> Include Numbers
+    <br>
+    <input type="checkbox" id="special_chars" checked> Include Special Characters
+    <br>
+    <button onclick="generatePassword()">Generate</button>
+    <h2 id="passwordOutput">Generated Password: </h2>
+</body>
+</html>
