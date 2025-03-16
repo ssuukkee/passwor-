@@ -1,45 +1,114 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <title>Password Generator</title>
-    <script>
-        function generatePassword() {
-            let length = document.getElementById("length").value;
-            let useDigits = document.getElementById("digits").checked;
-            let useSpecialChars = document.getElementById("special_chars").checked;
-            
-            const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            const digits = "0123456789";
-            const specialChars = "!@#$%^&*()_+[]{}|;:,.<>?";
-            
-            let allChars = letters;
-            if (useDigits) allChars += digits;
-            if (useSpecialChars) allChars += specialChars;
-            
-            if (allChars.length === 0) {
-                alert("Please select at least one character set.");
-                return;
-            }
-            
-            let password = "";
-            for (let i = 0; i < length; i++) {
-                password += allChars.charAt(Math.floor(Math.random() * allChars.length));
-            }
-            
-            document.getElementById("passwordOutput").innerText = "Generated Password: " + password;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直感像記憶トレーニング</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
         }
-    </script>
+        #imageContainer, #numberContainer {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px;
+        }
+        #options {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Generate a Secure Password</h1>
-    <label for="length">Password Length:</label>
-    <input type="number" id="length" value="12" min="4" max="64">
-    <br>
-    <input type="checkbox" id="digits" checked> Include Numbers
-    <br>
-    <input type="checkbox" id="special_chars" checked> Include Special Characters
-    <br>
-    <button onclick="generatePassword()">Generate</button>
-    <h2 id="passwordOutput">Generated Password: </h2>
+
+    <h1>直感像記憶トレーニング</h1>
+
+    <h2>画像記憶テスト</h2>
+    <div id="imageContainer"></div>
+    <button onclick="startImageTest()">開始</button>
+    <div id="options"></div>
+
+    <h2>数字記憶テスト</h2>
+    <div id="numberContainer"></div>
+    <button onclick="startNumberTest()">開始</button>
+    <input type="text" id="userInput" placeholder="入力">
+    <button onclick="checkNumber()">送信</button>
+
+    <h3>スコア: <span id="score">0</span></h3>
+
+    <script>
+        let score = 0;
+
+        // 画像記憶テスト
+        const images = ["🍎", "🍌", "🍇", "🍉", "🍒"];
+        let correctImage = "";
+
+        function startImageTest() {
+            let randomIndex = Math.floor(Math.random() * images.length);
+            correctImage = images[randomIndex];
+
+            document.getElementById("imageContainer").innerText = correctImage;
+
+            setTimeout(() => {
+                document.getElementById("imageContainer").innerText = "";
+                showOptions();
+            }, 800); // 0.8秒表示
+        }
+
+        function showOptions() {
+            let optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+            let shuffledImages = images.sort(() => Math.random() - 0.5);
+
+            shuffledImages.forEach(img => {
+                let btn = document.createElement("button");
+                btn.innerText = img;
+                btn.onclick = () => checkImage(img);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function checkImage(selected) {
+            if (selected === correctImage) {
+                alert("正解！");
+                score++;
+            } else {
+                alert("不正解！");
+            }
+            document.getElementById("score").innerText = score;
+        }
+
+        // 数字記憶テスト
+        let correctNumber = "";
+
+        function startNumberTest() {
+            correctNumber = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById("numberContainer").innerText = correctNumber;
+
+            setTimeout(() => {
+                document.getElementById("numberContainer").innerText = "";
+            }, 800); // 0.8秒表示
+        }
+
+        function checkNumber() {
+            let userInput = document.getElementById("userInput").value;
+            if (userInput === correctNumber) {
+                alert("正解！");
+                score++;
+            } else {
+                alert("不正解！ 正解は " + correctNumber);
+            }
+            document.getElementById("score").innerText = score;
+        }
+    </script>
+
 </body>
 </html>
