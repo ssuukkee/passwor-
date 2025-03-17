@@ -10,20 +10,30 @@
             text-align: center;
             margin: 20px;
         }
-        #imageContainer, #numberContainer {
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(2, 50px);
+            gap: 10px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        .grid-item {
+            width: 50px;
+            height: 50px;
             font-size: 24px;
             font-weight: bold;
-            margin: 20px;
-        }
-        #options {
             display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 10px;
+            border: 2px solid black;
+            background-color: #f0f0f0;
         }
         button {
             padding: 10px;
             font-size: 16px;
             cursor: pointer;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -32,13 +42,26 @@
     <h1>直感像記憶トレーニング</h1>
 
     <h2>画像記憶テスト</h2>
-    <div id="imageContainer"></div>
+    <div class="grid-container">
+        <div class="grid-item" id="cell0"></div>
+        <div class="grid-item" id="cell1"></div>
+        <div class="grid-item" id="cell2"></div>
+        <div class="grid-item" id="cell3"></div>
+        <div class="grid-item" id="cell4"></div>
+        <div class="grid-item" id="cell5"></div>
+        <div class="grid-item" id="cell6"></div>
+        <div class="grid-item" id="cell7"></div>
+        <div class="grid-item" id="cell8"></div>
+        <div class="grid-item" id="cell9"></div>
+    </div>
     <button onclick="startImageTest()">開始</button>
+    <div id="question" style="margin-top: 10px;"></div>
     <div id="options"></div>
 
     <h2>数字記憶テスト</h2>
-    <div id="numberContainer"></div>
+    <label>桁数: <input type="number" id="digitInput" value="4" min="1" max="10"></label>
     <button onclick="startNumberTest()">開始</button>
+    <div id="numberContainer"></div>
     <input type="text" id="userInput" placeholder="入力">
     <button onclick="checkNumber()">送信</button>
 
@@ -47,25 +70,46 @@
     <script>
         let score = 0;
 
-        // 画像記憶テスト
-        const images = ["🍎", "🍌", "🍇", "🍉", "🍒"];
+        // 画像記憶テスト（2×5マス）
+        const images = ["🍎", "🍌", "🍇", "🍉", "🍒", "🍑", "🍍", "🥭", "🍓", "🥝"];
+        let correctPosition = -1;
         let correctImage = "";
+        let displayedFruits = [];
 
         function startImageTest() {
-            let randomIndex = Math.floor(Math.random() * images.length);
-            correctImage = images[randomIndex];
+            // ランダムな10個の果物を選ぶ
+            displayedFruits = [];
+            for (let i = 0; i < 10; i++) {
+                displayedFruits.push(images[Math.floor(Math.random() * images.length)]);
+            }
 
-            document.getElementById("imageContainer").innerText = correctImage;
+            // 2×5マスに果物を表示
+            for (let i = 0; i < 10; i++) {
+                document.getElementById(`cell${i}`).innerText = displayedFruits[i];
+            }
 
+            // 0.8秒後に消す
             setTimeout(() => {
-                document.getElementById("imageContainer").innerText = "";
-                showOptions();
-            }, 800); // 0.8秒表示
+                for (let i = 0; i < 10; i++) {
+                    document.getElementById(`cell${i}`).innerText = "";
+                }
+                askQuestion();
+            }, 800);
+        }
+
+        function askQuestion() {
+            // ランダムなマスを選び、そこにあった果物を問う
+            correctPosition = Math.floor(Math.random() * 10);
+            correctImage = displayedFruits[correctPosition];
+
+            document.getElementById("question").innerText = `マス (${Math.floor(correctPosition / 5) + 1}, ${correctPosition % 5 + 1}) に表示されていた果物は？`;
+            showOptions();
         }
 
         function showOptions() {
             let optionsDiv = document.getElementById("options");
             optionsDiv.innerHTML = "";
+
             let shuffledImages = images.sort(() => Math.random() - 0.5);
 
             shuffledImages.forEach(img => {
@@ -90,12 +134,18 @@
         let correctNumber = "";
 
         function startNumberTest() {
-            correctNumber = Math.floor(1000 + Math.random() * 9000).toString();
+            let digits = parseInt(document.getElementById("digitInput").value);
+            if (digits < 1 || digits > 10) {
+                alert("桁数は1～10の範囲で指定してください");
+                return;
+            }
+
+            correctNumber = Math.floor(Math.pow(10, digits - 1) + Math.random() * (Math.pow(10, digits) - Math.pow(10, digits - 1))).toString();
             document.getElementById("numberContainer").innerText = correctNumber;
 
             setTimeout(() => {
                 document.getElementById("numberContainer").innerText = "";
-            }, 800); // 0.8秒表示
+            }, 800);
         }
 
         function checkNumber() {
