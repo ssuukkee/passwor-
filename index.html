@@ -1,164 +1,91 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>直感像記憶トレーニング</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(5, 50px);
-            grid-template-rows: repeat(2, 50px);
-            gap: 10px;
-            justify-content: center;
-            margin: 20px auto;
-        }
-        .grid-item {
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid black;
-            background-color: #f0f0f0;
-        }
-        button {
-            padding: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>タイマー付きメトロノーム</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    input {
+      font-size: 18px;
+      width: 70px;
+      margin: 5px;
+    }
+    button {
+      font-size: 18px;
+      margin: 10px;
+      padding: 10px 20px;
+    }
+    h1 {
+      font-size: 2em;
+    }
+  </style>
 </head>
 <body>
+  <h1>🎵 タイマー付きメトロノーム</h1>
 
-    <h1>直感像記憶トレーニング</h1>
+  <label for="bpm">BPM:</label>
+  <input type="number" id="bpm" value="100" min="30" max="300" /> BPM<br/>
 
-    <h2>画像記憶テスト</h2>
-    <div class="grid-container">
-        <div class="grid-item" id="cell0"></div>
-        <div class="grid-item" id="cell1"></div>
-        <div class="grid-item" id="cell2"></div>
-        <div class="grid-item" id="cell3"></div>
-        <div class="grid-item" id="cell4"></div>
-        <div class="grid-item" id="cell5"></div>
-        <div class="grid-item" id="cell6"></div>
-        <div class="grid-item" id="cell7"></div>
-        <div class="grid-item" id="cell8"></div>
-        <div class="grid-item" id="cell9"></div>
-    </div>
-    <button onclick="startImageTest()">開始</button>
-    <div id="question" style="margin-top: 10px;"></div>
-    <div id="options"></div>
+  <label for="minutes">時間:</label>
+  <input type="number" id="minutes" value="0" min="0" /> 分
+  <input type="number" id="seconds" value="30" min="0" max="59" /> 秒<br/>
 
-    <h2>数字記憶テスト</h2>
-    <label>桁数: <input type="number" id="digitInput" value="4" min="1" max="10"></label>
-    <button onclick="startNumberTest()">開始</button>
-    <div id="numberContainer"></div>
-    <input type="text" id="userInput" placeholder="入力">
-    <button onclick="checkNumber()">送信</button>
+  <button onclick="startMetronome()">スタート</button>
+  <button onclick="stopMetronome()">ストップ</button>
 
-    <h3>スコア: <span id="score">0</span></h3>
+  <p id="status"></p>
 
-    <script>
-        let score = 0;
+  <script>
+    let intervalId;
+    let timeoutId;
+    let audioCtx = null;
 
-        // 画像記憶テスト（2×5マス）
-        const images = ["🍎", "🍌", "🍇", "🍉", "🍒", "🍑", "🍍", "🥭", "🍓", "🥝"];
-        let correctPosition = -1;
-        let correctImage = "";
-        let displayedFruits = [];
+    function playClick() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const envelope = audioCtx.createGain();
+      osc.frequency.value = 1000;
+      envelope.gain.value = 1;
 
-        function startImageTest() {
-            // ランダムな10個の果物を選ぶ
-            displayedFruits = [];
-            for (let i = 0; i < 10; i++) {
-                displayedFruits.push(images[Math.floor(Math.random() * images.length)]);
-            }
+      osc.connect(envelope);
+      envelope.connect(audioCtx.destination);
 
-            // 2×5マスに果物を表示
-            for (let i = 0; i < 10; i++) {
-                document.getElementById(`cell${i}`).innerText = displayedFruits[i];
-            }
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
 
-            // 0.8秒後に消す
-            setTimeout(() => {
-                for (let i = 0; i < 10; i++) {
-                    document.getElementById(`cell${i}`).innerText = "";
-                }
-                askQuestion();
-            }, 800);
-        }
+    function startMetronome() {
+      const bpm = parseInt(document.getElementById("bpm").value);
+      const minutes = parseInt(document.getElementById("minutes").value) || 0;
+      const seconds = parseInt(document.getElementById("seconds").value) || 0;
+      const totalTime = (minutes * 60 + seconds) * 1000;
+      const interval = 60000 / bpm;
 
-        function askQuestion() {
-            // ランダムなマスを選び、そこにあった果物を問う
-            correctPosition = Math.floor(Math.random() * 10);
-            correctImage = displayedFruits[correctPosition];
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
 
-            document.getElementById("question").innerText = `マス (${Math.floor(correctPosition / 5) + 1}, ${correctPosition % 5 + 1}) に表示されていた果物は？`;
-            showOptions();
-        }
+      stopMetronome(); // 念のため停止してから開始
 
-        function showOptions() {
-            let optionsDiv = document.getElementById("options");
-            optionsDiv.innerHTML = "";
+      intervalId = setInterval(playClick, interval);
+      timeoutId = setTimeout(() => {
+        stopMetronome();
+        document.getElementById("status").textContent = "✅ メトロノーム停止しました。";
+      }, totalTime);
 
-            let shuffledImages = images.sort(() => Math.random() - 0.5);
+      document.getElementById("status").textContent = "⏳ 実行中...";
+    }
 
-            shuffledImages.forEach(img => {
-                let btn = document.createElement("button");
-                btn.innerText = img;
-                btn.onclick = () => checkImage(img);
-                optionsDiv.appendChild(btn);
-            });
-        }
-
-        function checkImage(selected) {
-            if (selected === correctImage) {
-                alert("正解！");
-                score++;
-            } else {
-                alert("不正解！");
-            }
-            document.getElementById("score").innerText = score;
-        }
-
-        // 数字記憶テスト
-        let correctNumber = "";
-
-        function startNumberTest() {
-            let digits = parseInt(document.getElementById("digitInput").value);
-            if (digits < 1 || digits > 10) {
-                alert("桁数は1～10の範囲で指定してください");
-                return;
-            }
-
-            correctNumber = Math.floor(Math.pow(10, digits - 1) + Math.random() * (Math.pow(10, digits) - Math.pow(10, digits - 1))).toString();
-            document.getElementById("numberContainer").innerText = correctNumber;
-
-            setTimeout(() => {
-                document.getElementById("numberContainer").innerText = "";
-            }, 800);
-        }
-
-        function checkNumber() {
-            let userInput = document.getElementById("userInput").value;
-            if (userInput === correctNumber) {
-                alert("正解！");
-                score++;
-            } else {
-                alert("不正解！ 正解は " + correctNumber);
-            }
-            document.getElementById("score").innerText = score;
-        }
-    </script>
-
+    function stopMetronome() {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      document.getElementById("status").textContent = "⏹ 停止しました。";
+    }
+  </script>
 </body>
 </html>
